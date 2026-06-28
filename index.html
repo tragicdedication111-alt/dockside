@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dockside — A Fishing Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Ultra&family=Space+Mono:wght@400;700&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0B2E33;
+    --bg-mid:   #173a3f;
+    --water:    #14524F;
+    --wood:     #6B4226;
+    --wood-dk:  #4A2C18;
+    --brass:    #C7913C;
+    --brass-lt: #E2B563;
+    --glow:     #8FD14F;
+    --paper:    #EFE6D2;
+    --ink:      #1B1410;
+    --rare:     #4FB6A8;
+    --legend:   #8FD14F;
+    --purple:   #bf4fff;
+    --font-d:   'Ultra', serif;
+    --font-m:   'Space Mono', monospace;
+    --font-b:   'Karla', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--paper);
+    font-family: var(--font-b);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px;
+    background: rgba(11,46,51,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(199,145,60,0.2);
+  }
+  .nav-brand {
+    font-family: var(--font-d);
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-lt);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-cta {
+    font-family: var(--font-d);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, var(--brass-lt), var(--brass));
+    color: var(--ink);
+    padding: 9px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: filter 0.15s;
+    box-shadow: 0 3px 0 var(--wood-dk);
+  }
+  .nav-cta:hover { filter: brightness(1.1); }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at top, var(--bg-mid) 0%, var(--bg) 55%, #061a1d 100%);
+  }
+
+  /* Water shimmer at bottom of hero */
+  .hero::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 180px;
+    background: linear-gradient(0deg, rgba(20,82,79,0.6) 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  /* Ripple rings */
+  .ripple-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid rgba(143,209,79,0.15);
+    animation: expandRing 6s ease-out infinite;
+    pointer-events: none;
+  }
+  .ripple-ring:nth-child(1) { width: 200px; height: 80px; bottom: 60px; left: 20%; animation-delay: 0s; }
+  .ripple-ring:nth-child(2) { width: 320px; height: 120px; bottom: 40px; left: 45%; animation-delay: 2s; }
+  .ripple-ring:nth-child(3) { width: 160px; height: 60px; bottom: 80px; left: 70%; animation-delay: 4s; }
+  @keyframes expandRing {
+    0%   { transform: scale(0.4); opacity: 0.6; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-m);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 18px;
+  }
+
+  .hero-title {
+    font-family: var(--font-d);
+    font-size: clamp(3.5rem, 10vw, 7rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 0.9;
+    color: var(--paper);
+    text-shadow: 0 4px 40px rgba(143,209,79,0.12), 0 2px 0 rgba(0,0,0,0.6);
+    position: relative; z-index: 1;
+  }
+  .hero-title span {
+    color: var(--brass-lt);
+  }
+
+  .hero-sub {
+    font-family: var(--font-b);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: rgba(239,230,210,0.7);
+    margin-top: 18px;
+    position: relative; z-index: 1;
+  }
+
+  .hero-actions {
+    display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+    margin-top: 44px;
+    position: relative; z-index: 1;
+  }
+
+  .btn-dl {
+    font-family: var(--font-d);
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: linear-gradient(180deg, var(--glow), #6aaa38);
+    color: var(--ink);
+    padding: 16px 36px;
+    border-radius: 12px;
+    text-decoration: none;
+    box-shadow: 0 5px 0 #3a6a20, 0 8px 24px rgba(143,209,79,0.25);
+    transition: transform 0.15s, filter 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-dl:hover { filter: brightness(1.08); transform: translateY(-2px); }
+  .btn-dl:active { transform: translateY(2px); }
+
+  .btn-ghost-lg {
+    font-family: var(--font-d);
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--paper);
+    padding: 16px 36px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(239,230,210,0.35);
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-ghost-lg:hover { border-color: var(--brass); background: rgba(199,145,60,0.08); }
+
+  .hero-note {
+    margin-top: 18px;
+    font-family: var(--font-m);
+    font-size: 0.68rem;
+    color: rgba(239,230,210,0.4);
+    letter-spacing: 0.06em;
+    position: relative; z-index: 1;
+  }
+
+  /* ===== DOCK PLANK DIVIDER ===== */
+  .plank {
+    height: 12px;
+    background: repeating-linear-gradient(90deg,
+      var(--wood-dk) 0px, var(--wood-dk) 2px,
+      var(--wood) 2px, var(--wood) 120px
+    );
+    border-top: 2px solid rgba(199,145,60,0.4);
+    border-bottom: 2px solid rgba(0,0,0,0.4);
+  }
+
+  /* ===== FEATURES ===== */
+  .section {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 80px 24px;
+  }
+
+  .section-label {
+    font-family: var(--font-m);
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-family: var(--font-d);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+    color: var(--paper);
+    margin-bottom: 48px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+  }
+
+  .feat-card {
+    background: linear-gradient(160deg, #1e3b3d, #132829);
+    border: 1px solid rgba(199,145,60,0.2);
+    border-radius: 16px;
+    padding: 26px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feat-card:hover {
+    border-color: rgba(199,145,60,0.5);
+    transform: translateY(-3px);
+  }
+
+  .feat-icon {
+    font-size: 2rem;
+    margin-bottom: 14px;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  }
+
+  .feat-title {
+    font-family: var(--font-d);
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--brass-lt);
+    margin-bottom: 8px;
+  }
+
+  .feat-desc {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: rgba(239,230,210,0.7);
+  }
+
+  /* ===== WORLDS ===== */
+  .worlds-bg {
+    background: linear-gradient(180deg, var(--bg) 0%, #0d3035 50%, var(--bg) 100%);
+    padding: 80px 0;
+  }
+
+  .worlds-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+
+  .world-card {
+    border-radius: 14px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: default;
+  }
+  .world-card:hover { transform: translateY(-4px); }
+
+  .world-card.dockside   { background: linear-gradient(135deg, #0e3a3d, #1E6B63); border-color: rgba(79,182,168,0.3); }
+  .world-card.tundra     { background: linear-gradient(135deg, #012733, #006064); border-color: rgba(128,222,234,0.3); }
+  .world-card.bayou      { background: linear-gradient(135deg, #0a2e0c, #1b5e20); border-color: rgba(105,240,174,0.3); }
+  .world-card.volcanic   { background: linear-gradient(135deg, #1a0500, #bf360c); border-color: rgba(255,87,34,0.3); }
+  .world-card.celestial  { background: linear-gradient(135deg, #0e0030, #4a148c); border-color: rgba(234,128,252,0.3); }
+
+  .world-emoji { font-size: 2.2rem; display: block; margin-bottom: 10px; }
+
+  .world-name {
+    font-family: var(--font-d);
+    font-size: 0.95rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .world-card.dockside  .world-name { color: #4FB6A8; }
+  .world-card.tundra    .world-name { color: #80deea; }
+  .world-card.bayou     .world-name { color: #69f0ae; }
+  .world-card.volcanic  .world-name { color: #ff8a65; }
+  .world-card.celestial .world-name { color: #ea80fc; }
+
+  .world-desc {
+    font-size: 0.82rem;
+    color: rgba(239,230,210,0.65);
+    line-height: 1.55;
+  }
+
+  .world-lock {
+    position: absolute; top: 16px; right: 16px;
+    font-family: var(--font-m);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.35);
+    color: rgba(239,230,210,0.5);
+    text-transform: uppercase;
+  }
+  .world-lock.starter {
+    background: rgba(143,209,79,0.15);
+    color: var(--glow);
+  }
+
+  /* ===== RARITY STRIP ===== */
+  .rarity-strip {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    padding: 48px 24px;
+    max-width: 1060px; margin: 0 auto;
+    align-items: center;
+  }
+  .rarity-label {
+    font-family: var(--font-m);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(239,230,210,0.4);
+    margin-right: 4px;
+  }
+  .rarity-pill {
+    font-family: var(--font-m);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+  .rarity-pill.common    { background: rgba(156,169,166,0.15); color: #9CA9A6; border: 1px solid rgba(156,169,166,0.3); }
+  .rarity-pill.uncommon  { background: rgba(79,182,168,0.15);  color: #4FB6A8; border: 1px solid rgba(79,182,168,0.3); }
+  .rarity-pill.rare      { background: rgba(199,145,60,0.15);  color: var(--brass-lt); border: 1px solid rgba(199,145,60,0.35); }
+  .rarity-pill.legendary { background: rgba(143,209,79,0.12);  color: var(--glow);     border: 1px solid rgba(143,209,79,0.35); }
+  .rarity-pill.megalodon { background: rgba(255,50,50,0.12);   color: #ff7070;         border: 1px solid rgba(255,50,50,0.3); }
+  .rarity-arrow { color: rgba(239,230,210,0.25); font-size: 0.8rem; }
+
+  /* ===== HOW IT WORKS ===== */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+    position: relative;
+  }
+  .steps-grid::before {
+    content: '';
+    position: absolute;
+    top: 32px; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(199,145,60,0.3), transparent);
+  }
+
+  .step {
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+  }
+
+  .step-num {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #25393a, #16292a);
+    border: 2px solid rgba(199,145,60,0.4);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-family: var(--font-m);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--brass-lt);
+    position: relative; z-index: 1;
+  }
+
+  .step-title {
+    font-family: var(--font-d);
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+    margin-bottom: 8px;
+  }
+
+  .step-desc {
+    font-size: 0.85rem;
+    color: rgba(239,230,210,0.6);
+    line-height: 1.5;
+  }
+
+  /* ===== BOBBER ANIM DEMO ===== */
+  .pond-demo {
+    width: 100%;
+    height: 120px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #1E6B63, #14524F 50%, #0c2f2d);
+    position: relative;
+    overflow: hidden;
+    margin: 40px 0 0;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
+  }
+  .pond-demo::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 10%;
+    background: linear-gradient(90deg, #4A2C18, #6B4226);
+    box-shadow: 4px 0 12px rgba(0,0,0,0.5);
+    z-index: 2;
+  }
+  .demo-bobber {
+    position: absolute;
+    left: 18%; top: 50%;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff, #d4453f 60%, #8e1f1f);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 0 8px rgba(212,69,63,0.3);
+    transform: translate(-50%, -50%);
+    animation: demoBob 2.5s ease-in-out infinite;
+    z-index: 3;
+  }
+  @keyframes demoBob {
+    0%, 100% { transform: translate(-50%, -50%); }
+    50% { transform: translate(-50%, -30%); }
+  }
+
+  /* ===== BOTTOM CTA ===== */
+  .cta-section {
+    text-align: center;
+    padding: 80px 24px 100px;
+    background: linear-gradient(0deg, #061a1d 0%, var(--bg) 100%);
+  }
+  .cta-title {
+    font-family: var(--font-d);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--paper);
+    margin-bottom: 14px;
+  }
+  .cta-sub {
+    color: rgba(239,230,210,0.55);
+    font-size: 1rem;
+    margin-bottom: 36px;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    padding: 28px 32px;
+    border-top: 1px solid rgba(199,145,60,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .footer-brand {
+    font-family: var(--font-d);
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brass);
+  }
+  .footer-note {
+    font-family: var(--font-m);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: rgba(239,230,210,0.3);
+    text-transform: uppercase;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 600px) {
+    nav { padding: 12px 16px; }
+    .section { padding: 56px 16px; }
+    .steps-grid::before { display: none; }
+    footer { flex-direction: column; text-align: center; }
+    .rarity-strip { justify-content: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ripple-ring, .demo-bobber { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">🎣 Dockside</div>
+  <a class="nav-cta" href="dockside-fishing-game-v3_2.html" download>Download Free</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="ripple-ring"></div>
+  <div class="ripple-ring"></div>
+  <div class="ripple-ring"></div>
+
+  <p class="hero-eyebrow">🎣 A browser fishing game</p>
+  <h1 class="hero-title">Dock<span>side</span></h1>
+  <p class="hero-sub">a lazy afternoon of fishing</p>
+
+  <div class="hero-actions">
+    <a class="btn-dl" href="dockside-fishing-game-v3_2.html" download>
+      ⬇ Download Free
+    </a>
+    <a class="btn-ghost-lg" href="#features">See what's inside</a>
+  </div>
+  <p class="hero-note">Single HTML file · No install · Works offline</p>
+</section>
+
+<div class="plank"></div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <p class="section-label">What you're getting</p>
+  <h2 class="section-title">A full fishing game<br>in one file</h2>
+
+  <div class="features-grid">
+    <div class="feat-card">
+      <span class="feat-icon">🌍</span>
+      <div class="feat-title">5 Worlds to Explore</div>
+      <p class="feat-desc">Start at the Dockside, then unlock the Frozen Tundra, Haunted Bayou, Volcanic Rift, and the Celestial Sea — each with their own fish, bosses, and gear.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🐉</span>
+      <div class="feat-title">Boss Battles</div>
+      <p class="feat-desc">Face legendary creatures like the Frozen Leviathan, Magma Leviathan, Permafrost Wyrm, and Swamp Reaper — each with a unique fight mechanic to master.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🎣</span>
+      <div class="feat-title">20+ Rods to Unlock</div>
+      <p class="feat-desc">Start with a cane pole, earn your way up to the Graphite Pro, Golden Angler, and eventually the Void Tendril. Every rod changes how the game feels.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🪱</span>
+      <div class="feat-title">9 Bait Types</div>
+      <p class="feat-desc">From simple worms and crickets to Golden Roe, Spirit Moth, and Void Crystals — bait changes what you catch and where.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🏆</span>
+      <div class="feat-title">Accessories & Perks</div>
+      <p class="feat-desc">Find rare accessories while fishing — the Lucky Lure, Pearl Ring, Ancient Reel, Tide Amulet, and more. Equip up to 3 for powerful stacked bonuses.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">💾</span>
+      <div class="feat-title">Progress Saves Automatically</div>
+      <p class="feat-desc">Your coins, gear, and cooler save to localStorage. Export your save as a code to carry it to any device or share it with friends.</p>
+    </div>
+  </div>
+
+  <div class="pond-demo" aria-hidden="true">
+    <div class="demo-bobber"></div>
+  </div>
+</section>
+
+<!-- WORLDS -->
+<div class="worlds-bg">
+  <div class="section" style="padding-top: 0; padding-bottom: 0;">
+    <p class="section-label">Locations</p>
+    <h2 class="section-title">Five worlds.<br>One hook.</h2>
+    <div class="worlds-grid">
+      <div class="world-card dockside">
+        <span class="world-lock starter">Starter</span>
+        <span class="world-emoji">🎣</span>
+        <div class="world-name">The Dockside</div>
+        <p class="world-desc">Your home pier. Shore bites, open water, and the Abyss below. A good place to learn the ropes.</p>
+      </div>
+      <div class="world-card tundra">
+        <span class="world-lock">Unlock</span>
+        <span class="world-emoji">❄️</span>
+        <div class="world-name">Frozen Tundra</div>
+        <p class="world-desc">Ice-locked waters hide massive creatures. The Permafrost Wyrm waits in the deep.</p>
+      </div>
+      <div class="world-card bayou">
+        <span class="world-lock">Unlock</span>
+        <span class="world-emoji">🌿</span>
+        <div class="world-name">Haunted Bayou</div>
+        <p class="world-desc">Murky, fog-drenched waters. The Swamp Reaper doesn't give up without a fight.</p>
+      </div>
+      <div class="world-card volcanic">
+        <span class="world-lock">Unlock</span>
+        <span class="world-emoji">🌋</span>
+        <div class="world-name">Volcanic Rift</div>
+        <p class="world-desc">Superheated vents and magma fish. Only the Dragon Spine rod can truly tame it.</p>
+      </div>
+      <div class="world-card celestial">
+        <span class="world-lock">Unlock</span>
+        <span class="world-emoji">✨</span>
+        <div class="world-name">Celestial Sea</div>
+        <p class="world-desc">Beyond the stars. The Void Tendril rod has 100% catch zone. The fish here don't care.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RARITY STRIP -->
+<div class="rarity-strip">
+  <span class="rarity-label">Rarity tiers</span>
+  <span class="rarity-pill common">Common</span>
+  <span class="rarity-arrow">→</span>
+  <span class="rarity-pill uncommon">Uncommon</span>
+  <span class="rarity-arrow">→</span>
+  <span class="rarity-pill rare">Rare</span>
+  <span class="rarity-arrow">→</span>
+  <span class="rarity-pill legendary">Legendary</span>
+  <span class="rarity-arrow">→</span>
+  <span class="rarity-pill megalodon">Megalodon</span>
+</div>
+
+<div class="plank"></div>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <p class="section-label">How to play</p>
+  <h2 class="section-title">Cast. Wait. Hook.<br>Don't lose it.</h2>
+  <div class="steps-grid">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Cast Your Line</div>
+      <p class="step-desc">Pick your depth — shore, open water, or the Abyss — and cast. Deeper = rarer fish, longer waits.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Wait for a Bite</div>
+      <p class="step-desc">Watch the bobber. When it dips and the alert fires, you've got a bite. Hit hook before the window closes.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Reel It In</div>
+      <p class="step-desc">Keep the fish marker inside the catch zone. Harder fish wander faster and drain your progress if you slip.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-title">Sell & Upgrade</div>
+      <p class="step-desc">Sell your catch for coins, buy better rods and bait, unlock new worlds, and hunt for rare accessories.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM CTA -->
+<section class="cta-section">
+  <h2 class="cta-title">Ready to cast?</h2>
+  <p class="cta-sub">One file. No sign-up. No ads. Just fishing.</p>
+  <a class="btn-dl" href="dockside-fishing-game-v3_2.html" download style="font-size:1rem; padding: 18px 44px; display: inline-flex;">
+    ⬇ Download Dockside — Free
+  </a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">🎣 Dockside</div>
+  <div class="footer-note">Free · Single HTML File · No Install Required</div>
+</footer>
+
+</body>
+</html>
